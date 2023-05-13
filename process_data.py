@@ -1,66 +1,33 @@
-import csv
+import pandas as pd
+import json 
+import numpy as np
+from pprint import pprint
 
-numCountriesofBirth = {}
-numCountries = {}
-numVars = {}
+df = pd.read_csv("./international-migration-database.csv")
 
-with open('international-migration-database.csv', 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
+dict = {}
+for _, row in df.iterrows():
+    country = row["Country"].lower().replace(" ", "_")
+    country_of_birth = row["Country of birth/nationality"].lower().replace(" ", "_")
+    year = row["Year"]
+    variable = row["Variable"].lower().replace(" ", "_")
+    value = row["Value"]
 
-    # Skip the first row
-    next(csvreader)
+    if country not in dict:
+        dict[country] = {}
+    if variable not in dict[country]:
+        dict[country][variable] = {}
+    if year not in dict[country][variable]:
+        dict[country][variable][year] = {}
+        
+    if not np.isnan(value) and int(value) != 0:
+        dict[country][variable][year][country_of_birth] = int(value)
 
-    # Iterate through each row
-    for row in csvreader:
-        birthCountry = row[1]
-        country = row[7]
-        var =  row[3]
+for country in dict:
+    with open(f"./process_data/{country}.json", "w") as json_file:
+        json.dump(dict[country], json_file)
 
-        if birthCountry not in numCountriesofBirth:
-            numCountriesofBirth[birthCountry] = 1
-        else:
-            numCountriesofBirth[birthCountry] = numCountriesofBirth[birthCountry] + 1
-
-        if country not in numCountries:
-            numCountries[country] = 1
-        else:
-            numCountries[country] = numCountries[country] + 1
-
-        if var not in numVars:
-            numVars[var] = 1
-        else:
-            numVars[var] = numVars[var] + 1
+pprint(dict["chile"]["inflows_of_foreign_population_by_nationality"])
 
 
-# for key in numCountriesofBirth:
-#     # Print the key and value
-#     print(key, numCountriesofBirth[key])
 
-# for key in numCountries:
-#     # Print the key and value
-#     print(key, numCountries[key])
-
-# for key in numVars:
-#     # Print the key and value
-#     print(key, numVars[key])
-
-totNumBirthCountries = 0
-totNumCountries = 0
-totVars = 0
-
-for key in numCountriesofBirth:
-    totNumBirthCountries += 1
-
-for key in numCountries:
-    totNumCountries += 1
-
-for key in numVars:
-    totVars += 1
-
-print("Total number of birth countries: " + str(totNumBirthCountries))
-print("Total number of countries: " + str(totNumCountries))
-print("Total number of variables: " + str(totVars))
-
-for key in numCountries:
-    # Print the key and value
-    print(key)
