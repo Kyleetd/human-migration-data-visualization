@@ -32,8 +32,6 @@ function WorldMap() {
   return (
     <svg
       ref={svgRef}
-      width="100%"
-      height="100%"
       viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
     ></svg>
   );
