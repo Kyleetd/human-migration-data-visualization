@@ -1,53 +1,111 @@
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
+import fs from "fs";
 import worldMapData from "./data/world-map.geo.json";
 import "./WorldMap.css";
 import countries_in_dataset from "./data/countries_in_dataset.json";
 
 // This dictionary aligns country names between svg components and dataset
-const country_name_map = {
-  "czech_republic": "czechia",
-  "korea": "south_korea",
-  "slovak_republic": "slovakia",
+const countryNameMap = {
+  czech_republic: "czechia",
+  korea: "south_korea",
+  slovak_republic: "slovakia",
   "t\u00fcrkiye": "turkey",
-  "united_states": "united_states_of_america",
-  "bosnia_and_herzegovina": "bosnia_and_herz.",
-  "brunei_darussalam": "brunei",
-  "central_african_republic": "central_african_rep.",
+  united_states: "united_states_of_america",
+  bosnia_and_herzegovina: "bosnia_and_herz.",
+  brunei_darussalam: "brunei",
+  central_african_republic: "central_african_rep.",
   "democratic_people's_republic_of_korea": "south_korea",
-  "democratic_republic_of_the_congo": "dem._rep._congo",
-  "dominican_republic": "dominican_rep.",
-  "equatorial_guinea": "eq._guinea",
-  "solomon_islands": "solomon_is.",
-  "swaziland": "eswatini",
-  "viet_nam": "vietnam"
-}
+  democratic_republic_of_the_congo: "dem._rep._congo",
+  dominican_republic: "dominican_rep.",
+  equatorial_guinea: "eq._guinea",
+  solomon_islands: "solomon_is.",
+  swaziland: "eswatini",
+  viet_nam: "vietnam",
+};
 
-function get_data_set_country_name(svgCountry) {
+const countriesWithData = [
+  "australia",
+  "austria",
+  "belgium",
+  "canada",
+  "chile",
+  "czech_republic",
+  "denmark",
+  "estonia",
+  "finland",
+  "france",
+  "germany",
+  "greece",
+  "hungary",
+  "iceland",
+  "ireland",
+  "israel",
+  "italy",
+  "japan",
+  "korea",
+  "latvia",
+  "luxembourg",
+  "mexico",
+  "netherlands",
+  "new_zealand",
+  "norway",
+  "poland",
+  "portugal",
+  "slovak_republic",
+  "slovenia",
+  "spain",
+  "sweden",
+  "switzerland",
+  "t\u00fcrkiye",
+  "united_kingdom",
+  "united_states",
+];
+
+function getDataSetCountryName(svgCountry) {
   /*
-  If the svgCountry exists as a value in country_name_map it will return its
+  If the svgCountry exists as a value in countryNameMap it will return its
   key. If no matching value is found it will return svgCountry.
   */
-  for (let key in country_name_map) {
-    if (country_name_map[key] == svgCountry) {
+  for (let key in countryNameMap) {
+    if (countryNameMap[key] == svgCountry) {
       return key;
     }
   }
   return svgCountry;
 }
 
-function get_svg_country_name(datasetCountry) {
+function getSvgCountryName(datasetCountry) {
   /*
-  If the datasetCountry exists as a key in country_name_map it will return its
+  If the datasetCountry exists as a key in countryNameMap it will return its
   value. If no matching value is found it will return svgCountry.
   */
-  if (country_name_map.hasOwnProperty(datasetCountry)) {
-    return country_name_map[datasetCountry];
+  if (countryNameMap.hasOwnProperty(datasetCountry)) {
+    return countryNameMap[datasetCountry];
   }
   return datasetCountry;
 }
 
+function getCountriesWithData() {
+  /*
+  Returns a list of countries that the dataset contains data for.
+  */
+}
+
+function checkUrlExists(url) {
+  return fetch(url, { method: "HEAD" })
+    .then((response) => {
+      return response.ok;
+    })
+    .catch(() => {
+      return false;
+    });
+}
+
 function WorldMap() {
+  /*
+  This function configures the world map svg element.
+  */
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -62,16 +120,41 @@ function WorldMap() {
       .data(worldMapData.features)
       .join("path")
       .attr("class", "country")
-      .attr("id", (feature) => feature.properties.name.toLowerCase().replace(/ /g, '_'))
+      .attr("id", (feature) =>
+        feature.properties.name.toLowerCase().replace(/ /g, "_")
+      )
       .attr("d", (feature) => pathGenerator(feature))
-      .attr("fill", "#ccc")
+      .attr("fill", (feature) => {
+        // This sets the country colors depending on if the country has data
+        const svgCountryName = feature.properties.name.toLowerCase().replace(/ /g, "_");
+        const datasetCountryName = getDataSetCountryName(svgCountryName);
+        if (countriesWithData.includes(datasetCountryName)) {
+          return "#888"; // Set color for countries with data
+        } else {
+          return "#ccc"; // Set color for countries without data
+        }
+      })
       .attr("stroke", "#fff")
       .attr("stroke-width", 1)
+      .on("mouseover", function () {
+        // This will change the color on hover for countries that have data
+        const currentFill = d3.select(this).attr("fill");
+        if (currentFill === "#888") {
+          d3.select(this).attr("fill", "#555");
+        }
+      })
+      .on("mouseout", function () {
+        // This will change the color back to the original for coutries that have data
+        const currentFill = d3.select(this).attr("fill");
+        if (currentFill === "#555") {
+          d3.select(this).attr("fill", "#888");
+        }
+      })
       .on("click", (event, feature) => {
         // For testing country name mapping
         for (let country in countries_in_dataset) {
-          if (country_name_map.hasOwnProperty(country)) {
-            country = country_name_map[country];
+          if (countryNameMap.hasOwnProperty(country)) {
+            country = countryNameMap[country];
           }
           const countryElement = document.getElementById(country);
           if (!countryElement) {
@@ -79,10 +162,13 @@ function WorldMap() {
           }
         }
         // For testing country name mapping
-        console.log("czech_republic:", get_svg_country_name("czech_republic"));
-        console.log("canada:", get_svg_country_name("canada"));
-        console.log("united_states_of_america:", get_data_set_country_name("united_states_of_america"));   
-        console.log("canada:", get_data_set_country_name("canada"));      
+        console.log("czech_republic:", getSvgCountryName("czech_republic"));
+        console.log("canada:", getSvgCountryName("canada"));
+        console.log(
+          "united_states_of_america:",
+          getDataSetCountryName("united_states_of_america")
+        );
+        console.log("canada:", getDataSetCountryName("canada"));
       });
   }, []);
 
