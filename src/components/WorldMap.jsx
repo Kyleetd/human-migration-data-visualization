@@ -66,6 +66,7 @@ const countriesWithData = [
 ];
 
 const countriesWithDataColor = "#888"
+const countriesWithDataHoverColor = "#555"
 const countriesWithoutDataColor = "#ccc"
 // CONSTANTS
 
@@ -135,13 +136,13 @@ function WorldMap() {
         // This will change the color on hover for countries that have data
         const currentFill = d3.select(this).attr("fill");
         if (currentFill === countriesWithDataColor) {
-          d3.select(this).attr("fill", "#555");
+          d3.select(this).attr("fill", countriesWithDataHoverColor);
         }
       })
       .on("mouseout", function () {
         // This will change the color back to the original for coutries that have data
         const currentFill = d3.select(this).attr("fill");
-        if (currentFill === "#555") {
+        if (currentFill === countriesWithDataHoverColor) {
           d3.select(this).attr("fill", countriesWithDataColor);
         }
       })
